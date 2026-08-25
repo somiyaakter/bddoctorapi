@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS chambers;
+DROP TABLE IF EXISTS doctors;
