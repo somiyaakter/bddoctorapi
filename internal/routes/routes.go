@@ -3,11 +3,17 @@ package routes
 import (
 	"net/http"
 
+	"datalab_api/internal/auth"
 	"datalab_api/internal/doctor"
 	"datalab_api/internal/taxonomy"
 )
 
-func Setup(doctorHandler *doctor.Handler, taxonomyHandler *taxonomy.Handler) *http.ServeMux {
+func Setup(
+	doctorHandler *doctor.Handler,
+	taxonomyHandler *taxonomy.Handler,
+	authMiddleware *auth.Middleware,
+) http.Handler {
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/v1/doctors", doctorHandler.List)
@@ -15,5 +21,5 @@ func Setup(doctorHandler *doctor.Handler, taxonomyHandler *taxonomy.Handler) *ht
 	mux.HandleFunc("GET /api/v1/locations", taxonomyHandler.ListLocations)
 	mux.HandleFunc("GET /api/v1/specialties", taxonomyHandler.ListSpecialties)
 
-	return mux
+	return authMiddleware.Authenticate(mux)
 }

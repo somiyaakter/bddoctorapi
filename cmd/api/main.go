@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
+	"datalab_api/internal/auth"
+	"datalab_api/internal/config"
+	"datalab_api/internal/database"
+	"datalab_api/internal/doctor"
+	"datalab_api/internal/routes"
+	"datalab_api/internal/taxonomy"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"datalab_api/internal/config"
-	"datalab_api/internal/database"
-	"datalab_api/internal/doctor"
-	"datalab_api/internal/routes"
-	"datalab_api/internal/taxonomy"
 )
 
 func main() {
@@ -28,27 +29,33 @@ func main() {
 	db := database.NewPostgresDB(ctx, cfg.DatabaseURL)
 	defer db.Close()
 
-	// Handlers
+	// Doctor handler
 	doctorHandler := doctor.NewHandler(
 		doctor.NewService(
 			doctor.NewRepository(db),
 		),
 	)
 
+	// Taxonomy handler
 	taxonomyHandler := taxonomy.NewHandler(
 		taxonomy.NewRepository(db),
 	)
 
+	// Authentication
+	authRepo := auth.NewRepository(db)
+	authMiddleware := auth.NewMiddleware(authRepo)
+
 	// Routes
-	mux := routes.Setup(
+	handler := routes.Setup(
 		doctorHandler,
 		taxonomyHandler,
+		authMiddleware,
 	)
 
 	// HTTP server
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: handler,
 	}
 
 	// Start server

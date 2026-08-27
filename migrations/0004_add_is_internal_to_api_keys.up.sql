@@ -1,0 +1,2 @@
+ALTER TABLE api_keys
+    ADD COLUMN IF NOT EXISTS is_internal BOOLEAN NOT NULL DEFAULT false;
