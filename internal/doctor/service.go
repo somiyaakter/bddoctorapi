@@ -17,8 +17,8 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) List(ctx context.Context, page, pageSize int) (doctors []Doctor, total int, err error) {
-	return s.repo.List(ctx, ListParams{Page: page, PageSize: pageSize})
+func (s *Service) List(ctx context.Context, p ListParams) ([]Doctor, int, error) {
+	return s.repo.List(ctx, p)
 }
 
 func (s *Service) GetByID(ctx context.Context, id int64) (Doctor, error) {

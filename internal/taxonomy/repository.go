@@ -101,3 +101,24 @@ func (r *Repository) ListSpecialties(ctx context.Context, locationID *int64) ([]
 	}
 	return specialties, rows.Err()
 }
+func (r *Repository) LinkDoctorLocation(ctx context.Context, doctorID, locationID int64) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO doctor_locations (doctor_id, location_id)
+		VALUES ($1, $2) ON CONFLICT DO NOTHING
+	`, doctorID, locationID)
+	if err != nil {
+		return fmt.Errorf("linking doctor %d to location %d: %w", doctorID, locationID, err)
+	}
+	return nil
+}
+
+func (r *Repository) LinkDoctorSpecialty(ctx context.Context, doctorID, specialtyID int64) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO doctor_specialties (doctor_id, specialty_id)
+		VALUES ($1, $2) ON CONFLICT DO NOTHING
+	`, doctorID, specialtyID)
+	if err != nil {
+		return fmt.Errorf("linking doctor %d to specialty %d: %w", doctorID, specialtyID, err)
+	}
+	return nil
+}

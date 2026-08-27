@@ -7,6 +7,32 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type RepositoryInterface interface {
+	Create(
+		ctx context.Context,
+		name string,
+		keyHash string,
+		requestsPerMinute int,
+		monthlyQuota int,
+		isInternal bool,
+	) (APIKey, error)
+
+	GetActiveByHash(
+		ctx context.Context,
+		keyHash string,
+	) (APIKey, error)
+
+	TryIncrementUsage(
+		ctx context.Context,
+		apiKeyID int64,
+		monthlyQuota int,
+	) (allowed bool, used int, periodStart string, err error)
+
+	GetCurrentUsage(
+		ctx context.Context,
+		apiKeyID int64,
+	) (int, error)
+}
 type Repository struct {
 	db *pgxpool.Pool
 }
@@ -243,10 +269,7 @@ func (r *Repository) TryIncrementUsage(
 // GetCurrentUsage returns this month's usage without incrementing it.
 //
 // If no usage row exists yet this month, usage is 0.
-func (r *Repository) GetCurrentUsage(
-	ctx context.Context,
-	apiKeyID int64,
-) (int, error) {
+func (r *Repository) GetCurrentUsage(ctx context.Context,apiKeyID int64,) (int, error) {
 
 	var count int
 

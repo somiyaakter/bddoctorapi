@@ -47,6 +47,7 @@ func main() {
 
 	// 2. Save locations + discover/save specialties
 	totalSpecialties := 0
+
 	for _, loc := range locations {
 		locID, err := taxonomyRepo.UpsertLocation(
 			ctx,
@@ -55,7 +56,11 @@ func main() {
 		)
 
 		if err != nil {
-			log.Printf("failed to save location %s: %v", loc.Name, err)
+			log.Printf(
+				"failed to save location %s: %v",
+				loc.Name,
+				err,
+			)
 			continue
 		}
 
@@ -80,7 +85,6 @@ func main() {
 		)
 
 		for _, s := range specialties {
-
 			_, err := taxonomyRepo.UpsertSpecialty(
 				ctx,
 				locID,
@@ -107,6 +111,32 @@ func main() {
 	)
 
 	// --------------------------------------------------
+	// Load taxonomy for doctor matching
+	// --------------------------------------------------
+
+	allLocations, err := taxonomyRepo.ListLocations(ctx)
+	if err != nil {
+		log.Fatalf(
+			"failed to load locations for matching: %v",
+			err,
+		)
+	}
+
+	allSpecialties, err := taxonomyRepo.ListSpecialties(ctx, nil)
+	if err != nil {
+		log.Fatalf(
+			"failed to load specialties for matching: %v",
+			err,
+		)
+	}
+
+	locationURLByID := make(map[int64]string)
+
+	for _, loc := range allLocations {
+		locationURLByID[loc.ID] = loc.URL
+	}
+
+	// --------------------------------------------------
 	// 3. Discover doctor profile URLs
 	// --------------------------------------------------
 
@@ -128,8 +158,12 @@ func main() {
 		len(profileURLs),
 	)
 
+	// --------------------------------------------------
 	// 4. Scrape all doctor profiles
+	// --------------------------------------------------
+
 	saved, failed := 0, 0
+
 	err = scraper.ScrapeDoctorProfiles(
 		c,
 		profileURLs,
@@ -144,12 +178,63 @@ func main() {
 				failed++
 				return
 			}
+
+			saved++
+
+			// Collect all chamber addresses for location matching.
+			var addresses []string
+
+			for _, ch := range d.Chambers {
+				addresses = append(
+					addresses,
+					ch.Address,
+				)
+			}
+
+			// Match doctor with locations.
+			for _, loc := range taxonomy.MatchLocations(
+				allLocations,
+				addresses,
+			) {
+				if err := taxonomyRepo.LinkDoctorLocation(
+					ctx,
+					id,
+					loc.ID,
+				); err != nil {
+					log.Printf(
+						"failed to link doctor %d to location %s: %v",
+						id,
+						loc.Name,
+						err,
+					)
+				}
+			}
+
+			// Match doctor with specialties.
+			for _, sp := range taxonomy.MatchSpecialties(
+				allSpecialties,
+				locationURLByID,
+				d.Specialties,
+			) {
+				if err := taxonomyRepo.LinkDoctorSpecialty(
+					ctx,
+					id,
+					sp.ID,
+				); err != nil {
+					log.Printf(
+						"failed to link doctor %d to specialty %s: %v",
+						id,
+						sp.Name,
+						err,
+					)
+				}
+			}
+
 			log.Printf(
-				"saved doctor id=%d: %s",
+				"saved+linked doctor id=%d: %s",
 				id,
 				d.Name,
 			)
-			saved++
 		},
 	)
 

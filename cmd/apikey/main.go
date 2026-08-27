@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"datalab_api/internal/auth"
+	"datalab_api/internal/config"
 	"datalab_api/internal/database"
 	"flag"
 	"fmt"
 	"log"
-	"os"
 )
 
 func main() {
@@ -21,13 +21,13 @@ func main() {
 		log.Fatal("-name is required")
 	}
 
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL environment variable is required")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	ctx := context.Background()
-	db := database.NewPostgresDB(ctx, databaseURL)
+	db := database.NewPostgresDB(ctx, cfg.DatabaseURL)
 	defer db.Close()
 
 	repo := auth.NewRepository(db)

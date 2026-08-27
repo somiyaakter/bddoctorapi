@@ -74,9 +74,9 @@ func NewMiddleware(repo *Repository) *Middleware {
 func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// ---------------------------------------------------------
+		
 		// 1. Read API key
-		// ---------------------------------------------------------
+		
 
 		rawKey := r.Header.Get("X-API-Key")
 
@@ -89,9 +89,9 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// ---------------------------------------------------------
+
 		// 2. Validate API key
-		// ---------------------------------------------------------
+	
 
 		key, err := m.repo.GetActiveByHash(
 			r.Context(),
@@ -116,12 +116,11 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// ---------------------------------------------------------
+
 		// 3. Per-minute rate limit
 		//
 		// IMPORTANT:
 		// This applies to BOTH internal and external keys.
-		// ---------------------------------------------------------
 
 		limiter := m.limiters.get(
 			key.ID,
