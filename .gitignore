@@ -1,0 +1,15 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+
+# Go
+*.exe
+*.out
