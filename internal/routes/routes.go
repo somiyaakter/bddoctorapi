@@ -13,9 +13,10 @@ func Setup(doctorHandler *doctor.Handler, taxonomyHandler *taxonomy.Handler, aut
 
 	// Public — no API key required, used for uptime/health checks
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"ok"}`))
+})
 
 	// Everything else requires auth
 	protected := http.NewServeMux()
