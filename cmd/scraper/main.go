@@ -21,33 +21,31 @@ const homepageURL = "https://www.doctorbangladesh.com/"
 // 3 AM, when visitor traffic to both our site and the source site is lowest.
 const runHour = 3
 
+
 func main() {
+	// Load application configuration
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Create context
 	ctx := context.Background()
+
+	// PostgreSQL connection
 	db := database.NewPostgresDB(ctx, cfg.DatabaseURL)
 	defer db.Close()
 
-	loc, err := time.LoadLocation("Asia/Dhaka")
-	if err != nil {
-		log.Printf("failed to load Asia/Dhaka timezone, falling back to UTC: %v", err)
-		loc = time.UTC
-	}
+	log.Println("=== scraper started ===")
 
-	// Run once immediately on startup — so a fresh deploy doesn't sit idle
-	// for up to 24 hours before the first scrape.
-	log.Println("running initial scrape on startup...")
+	// Run one complete scrape
 	runScrape(ctx, db)
 
-	// Then loop forever, running once every day at runHour.
-	for {
-		sleepUntilNextRun(loc)
-		runScrape(ctx, db)
-	}
+	log.Println("=== scraper finished ===")
 }
+
+
+
 
 // sleepUntilNextRun blocks until the next occurrence of runHour in loc.
 func sleepUntilNextRun(loc *time.Location) {
